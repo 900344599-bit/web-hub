@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DashPortal - Rhythm & Arcade Games</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        pixel: ['"Press Start 2P"', 'cursive'],
+                    },
+                    colors: {
+                        dash: {
+                            bg: '#0a0d14',
+                            card: '#121824',
+                            border: '#1e293b',
+                            neon: '#00f0ff',
+                            purple: '#a855f7',
+                            pink: '#ec4899',
+                            yellow: '#eab308'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0a0d14;
+            color: #f8fafc;
+            font-family: 'Outfit', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Neon Glow Utility Effects */
+        .neon-shadow-cyan {
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
+        }
+        .neon-shadow-purple {
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.25);
+        }
+        .neon-border {
+            border: 1px solid rgba(0, 240, 255, 0.4);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0d14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+
+        /* Canvas Game Scaling */
+        canvas {
+            display: block;
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
+
+    <!-- Header / Navigation Bar -->
+    <header class="sticky top-0 z-40 bg-dash-bg/90 backdrop-blur-md border-b border-dash-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                
+                <!-- Logo -->
+                <div class="flex items-center gap-3 cursor-pointer" onclick="filterCategory('All')">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 flex items-center justify-center text-black font-black shadow-lg shadow-cyan-500/20 transform -rotate-3 hover:rotate-0 transition duration-300">
+                        <i class="fa-solid fa-cube text-xl text-slate-950"></i>
+                    </div>
+                    <div>
+                        <span class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-1">
+                            Dash<span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Portal</span>
+                        </span>
+                        <span class="text-[10px] block font-semibold text-cyan-400 tracking-widest uppercase -mt-1">Rhythm & Arcade Hub</span>
+                    </div>
+                </div>
+
+                <!-- Search Input (Desktop) -->
+                <div class="hidden md:block flex-1 max-w-md mx-8">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            placeholder="Search games (e.g. Geometry Dash, Rhythm)..." 
+                            class="w-full pl-10 pr-4 py-2.5 bg-dash-card border border-dash-border rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition shadow-inner"
+                            oninput="handleSearch()"
+                        >
+                    </div>
+                </div>
+
+                <!-- Status Badge -->
+                <div class="flex items-center gap-3">
+                    <div class="hidden sm:flex items-center gap-2 bg-dash-card border border-dash-border rounded-xl px-3.5 py-1.5 text-xs text-slate-300">
+                        <span class="relative flex h-2.5 w-2.5">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
+                        </span>
+                        <span id="activeGameCounter" class="font-medium">4 Games Loaded</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+
+        <!-- Mobile Search Input -->
+        <div class="block md:hidden mb-6">
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input 
+                    type="text" 
+                    id="mobileSearchInput" 
+                    placeholder="Search games..." 
+                    class="w-full pl-10 pr-4 py-2.5 bg-dash-card border border-dash-border rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                    oninput="handleMobileSearch()"
+                >
+            </div>
+        </div>
+
+        <!-- Featured Banner -->
+        <div class="relative rounded-3xl bg-gradient-to-r from-cyan-950/60 via-purple-950/40 to-dash-card border border-cyan-500/30 p-6 sm:p-10 mb-10 overflow-hidden shadow-2xl">
+            <div class="absolute -right-10 -bottom-10 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute right-1/3 -top-10 w-60 h-60 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="relative z-10 max-w-2xl">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-semibold mb-4">
+                    <i class="fa-solid fa-bolt text-yellow-400"></i> Rhythm Platformer Experience
+                </div>
+                <h1 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                    Jump to the Beat in <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-500">DashPortal</span>
+                </h1>
+                <p class="text-slate-300 text-sm sm:text-base mt-3 leading-relaxed">
+                    Play rhythm-action games directly in your browser. Experience official community levels embedded via TurboWarp or jump straight into our custom canvas engine!
+                </p>
+
+                <div class="mt-6 flex flex-wrap gap-4">
+                    <button onclick="openGameModal('geodash-canvas')" class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-sm rounded-xl transition shadow-lg shadow-cyan-500/25 flex items-center gap-2">
+                        <i class="fa-solid fa-play text-xs"></i> Play Built-in Rhythm Dash
+                    </button>
+                    <button onclick="openGameModal('geodash-turbowarp')" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm rounded-xl border border-slate-700 transition flex items-center gap-2">
+                        <i class="fa-solid fa-cubes text-purple-400"></i> Play TurboWarp Edition
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="flex items-center justify-between gap-4 mb-6">
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none w-full" id="categoryContainer">
+                <!-- Dynamically filled categories -->
+            </div>
+        </div>
+
+        <!-- Game Catalog Grid -->
+        <div id="gamesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Dynamically injected game cards -->
+        </div>
+
+        <!-- Empty State View -->
+        <div id="emptyState" class="hidden text-center py-20">
+            <div class="w-20 h-20 bg-dash-card border border-dash-border rounded-full flex items-center justify-center mx-auto mb-4 text-slate-600 text-3xl">
+                <i class="fa-solid fa-gamepad"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-200">No games found</h3>
+            <p class="text-slate-400 text-sm mt-1">Try adjusting your search terms or filter selection.</p>
+        </div>
+    </main>
+
+    <!-- Fullscreen Game Modal -->
+    <div id="gameModal" class="fixed inset-0 z-50 hidden bg-slate-950/90 backdrop-blur-lg flex items-center justify-center p-2 sm:p-4">
+        <div class="bg-dash-card border border-dash-border rounded-2xl w-full max-w-6xl h-[92vh] flex flex-col shadow-2xl overflow-hidden relative">
+            
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between px-6 py-3.5 border-b border-dash-border bg-dash-card/90">
+                <div class="flex items-center gap-3">
+                    <span id="modalGameIcon" class="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-base">
+                        <i class="fa-solid fa-cube"></i>
+                    </span>
+                    <div>
+                        <h2 id="modalGameTitle" class="text-base font-bold text-slate-100 flex items-center gap-2">Game Title</h2>
+                        <span id="modalGameCategory" class="text-xs text-slate-400">Category</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="reloadActiveGame()" class="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition" title="Restart Game">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <button onclick="toggleModalFullscreen()" class="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition" title="Toggle Fullscreen">
+                        <i class="fa-solid fa-expand"></i>
+                    </button>
+                    <button onclick="closeGameModal()" class="p-2.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-xl transition text-lg" title="Close Modal">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Game Stage Canvas / Iframe Shell -->
+            <div class="flex-1 bg-black relative flex items-center justify-center overflow-hidden" id="modalStageWrapper">
+                
+                <!-- Loading Animation -->
+                <div id="modalLoader" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950 text-slate-400 gap-3">
+                    <div class="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span class="text-sm font-medium tracking-wide">Initializing engine...</span>
+                </div>
+
+                <!-- Mode A: Embed Iframe Player -->
+                <iframe 
+                    id="gameIframe" 
+                    class="w-full h-full border-0 relative z-10 hidden" 
+                    allow="autoplay; keyboard; fullscreen" 
+                    onload="hideModalLoader()"
+                ></iframe>
+
+                <!-- Mode B: Native Canvas Game Engine Stage -->
+                <div id="canvasStage" class="w-full h-full flex items-center justify-center relative hidden">
+                    <canvas id="gameCanvas" class="max-w-full max-h-full bg-slate-950 shadow-2xl"></canvas>
+                </div>
+            </div>
+
+            <!-- Modal Footer Details -->
+            <div class="px-6 py-3 border-t border-dash-border bg-dash-card/90 flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2">
+                <p id="modalGameDesc" class="truncate max-w-lg">Game description details...</p>
+                <div class="flex items-center gap-4">
+                    <span class="text-slate-500"><i class="fa-solid fa-keyboard text-cyan-400 mr-1"></i> Controls: Space / Arrow Up / Click</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-dash-border bg-dash-bg/60 py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            <p>&copy; 2026 DashPortal. All embedded projects remain intellectual property of their respective creators.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Game Catalog Array
+        const gamesCatalog = [
+            {
+                id: 'geodash-turbowarp',
+                title: 'Geometry Dash (TurboWarp Embed)',
+                category: 'Rhythm',
+                type: 'iframe',
+                src: 'https://turbowarp.org/105500895/embed?autoplay=true',
+                thumbnail: 'https://placehold.co/600x350/0f172a/00f0ff?text=Geometry+Dash+TurboWarp',
+                description: 'Play a full rhythm platformer recreated by community developers on Scratch and TurboWarp.',
+                rating: 4.9,
+                badge: 'Popular',
+                icon: 'fa-cube'
+            },
+            {
+                id: 'geodash-canvas',
+                title: 'Dash Canvas (Built-in Rhythm Engine)',
+                category: 'Rhythm',
+                type: 'canvas-dash',
+                thumbnail: 'https://placehold.co/600x350/1e1b4b/a855f7?text=Native+Canvas+Dash',
+                description: 'Custom side-scrolling rhythm cube game with obstacle jumping, particles, attempt counter, and music pulse.',
+                rating: 4.8,
+                badge: 'Exclusive',
+                icon: 'fa-bolt'
+            },
+            {
+                id: 'space-defender',
+                title: 'Retro Space Defender',
+                category: 'Arcade',
+                type: 'canvas-space',
+                thumbnail: 'https://placehold.co/600x350/0284c7/ffffff?text=Retro+Space+Defender',
+                description: 'Defend your spaceship against incoming asteroids and alien threats in this retro arcade shooter.',
+                rating: 4.6,
+                badge: 'Classic',
+                icon: 'fa-rocket'
+            },
+            {
+                id: 'cyber-snake',
+                title: 'Cyber Snake 2077',
+                category: 'Arcade',
+                type: 'canvas-snake',
+                thumbnail: 'https://placehold.co/600x350/059669/ffffff?text=Cyber+Snake',
+                description: 'A neon-styled classic snake game with speed power-ups and glowing visuals.',
+                rating: 4.5,
+                badge: 'Retro',
+                icon: 'fa-staff-snake'
+            }
+        ];
+
+        const categories = ['All', 'Rhythm', 'Arcade', 'Platformer'];
+        let activeCategory = 'All';
+        let searchQuery = '';
+        let activeGameId = null;
+
+        // Engine Animation Handles
+        let currentGameLoopId = null;
+
+        // Initialize UI
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCategories();
+            renderGames();
+        });
+
+        // Render Category Filter Buttons
+        function renderCategories() {
+            const container = document.getElementById('categoryContainer');
+            container.innerHTML = categories.map(cat => {
+                const isActive = cat === activeCategory;
+                const activeStyle = isActive 
+                    ? 'bg-cyan-500 text-slate-950 font-bold shadow-lg shadow-cyan-500/20' 
+                    : 'bg-dash-card text-slate-300 hover:bg-slate-800 hover:text-white border border-dash-border';
+                
+                return `
+                    <button 
+                        onclick="filterCategory('${cat}')" 
+                        class="px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition duration-200 ${activeStyle}"
+                    >
+                        ${cat === 'All' ? '<i class="fa-solid fa-grid-2 mr-1.5"></i>' : ''}${cat}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        // Render Games Grid
+        function renderGames() {
+            const grid = document.getElementById('gamesGrid');
+            const emptyState = document.getElementById('emptyState');
+
+            const filtered = gamesCatalog.filter(game => {
+                const matchCategory = activeCategory === 'All' || game.category === activeCategory;
+                const matchSearch = game.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                    game.description.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchCategory && matchSearch;
+            });
+
+            document.getElementById('activeGameCounter').textContent = `${filtered.length} Games Available`;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.innerHTML = filtered.map(game => `
+                <div class="bg-dash-card border border-dash-border rounded-2xl overflow-hidden hover:border-cyan-500/50 transition duration-300 flex flex-col justify-between group shadow-xl">
+                    <div>
+                        <!-- Thumbnail Header -->
+                        <div class="relative aspect-video overflow-hidden bg-slate-900">
+                            <img 
+                                src="${game.thumbnail}" 
+                                alt="${game.title}" 
+                                class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                            />
+                            <span class="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md border border-slate-700 text-cyan-400 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                ${game.category}
+                            </span>
+                            <span class="absolute top-3 right-3 bg-cyan-500 text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded shadow">
+                                ${game.badge}
+                            </span>
+                        </div>
+
+                        <!-- Info Content -->
+                        <div class="p-5">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <h3 class="text-base font-bold text-white group-hover:text-cyan-400 transition truncate">
+                                    ${game.title}
+                                </h3>
+                            </div>
+                            <div class="flex items-center gap-1 text-amber-400 text-xs mb-2">
+                                <i class="fa-solid fa-star"></i>
+                                <span class="font-bold text-slate-200">${game.rating}</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed line-clamp-2">
+                                ${game.description}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="px-5 pb-5 pt-0">
+                        <button 
+                            onclick="openGameModal('${game.id}')" 
+                            class="w-full py-2.5 bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-slate-200 rounded-xl text-xs font-bold transition duration-200 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-cyan-500/20"
+                        >
+                            <i class="fa-solid fa-play text-[10px]"></i> Play Now
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterCategory(cat) {
+            activeCategory = cat;
+            renderCategories();
+            renderGames();
+        }
+
+        function handleSearch() {
+            searchQuery = document.getElementById('searchInput').value;
+            renderGames();
+        }
+
+        function handleMobileSearch() {
+            searchQuery = document.getElementById('mobileSearchInput').value;
+            renderGames();
+        }
+
+        // Modal & Engine Execution Setup
+        function openGameModal(gameId) {
+            const game = gamesCatalog.find(g => g.id === gameId);
+            if (!game) return;
+
+            activeGameId = gameId;
+            document.getElementById('modalGameTitle').textContent = game.title;
+            document.getElementById('modalGameCategory').textContent = `${game.category} • ${game.badge}`;
+            document.getElementById('modalGameDesc').textContent = game.description;
+
+            const modal = document.getElementById('gameModal');
+            const iframe = document.getElementById('gameIframe');
+            const canvasStage = document.getElementById('canvasStage');
+            const loader = document.getElementById('modalLoader');
+
+            // Reset Stage
+            stopCurrentCanvasEngine();
+            iframe.classList.add('hidden');
+            canvasStage.classList.add('hidden');
+            iframe.src = '';
+            loader.classList.remove('hidden');
+
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            if (game.type === 'iframe') {
+                iframe.classList.remove('hidden');
+                iframe.src = game.src;
+            } else if (game.type.startsWith('canvas-')) {
+                canvasStage.classList.remove('hidden');
+                setTimeout(() => {
+                    hideModalLoader();
+                    startCanvasEngine(game.type);
+                }, 400);
+            }
+        }
+
+        function closeGameModal() {
+            const modal = document.getElementById('gameModal');
+            const iframe = document.getElementById('gameIframe');
+            
+            stopCurrentCanvasEngine();
+            iframe.src = '';
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function hideModalLoader() {
+            document.getElementById('modalLoader').classList.add('hidden');
+        }
+
+        function reloadActiveGame() {
+            if (activeGameId) {
+                openGameModal(activeGameId);
+            }
+        }
+
+        function toggleModalFullscreen() {
+            const wrapper = document.getElementById('modalStageWrapper');
+            if (!document.fullscreenElement) {
+                wrapper.requestFullscreen().catch(err => {
+                    console.error("Fullscreen error:", err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function stopCurrentCanvasEngine() {
+            if (currentGameLoopId) {
+                cancelAnimationFrame(currentGameLoopId);
+                currentGameLoopId = null;
+            }
+        }
+
+        function startCanvasEngine(engineType) {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Adjust canvas resolution
+            canvas.width = 800;
+            canvas.height = 450;
+
+            if (engineType === 'canvas-dash') {
+                runDashEngine(canvas, ctx);
+            } else if (engineType === 'canvas-space') {
+                runSpaceEngine(canvas, ctx);
+            } else if (engineType === 'canvas-snake') {
+                runSnakeEngine(canvas, ctx);
+            }
+        }
+
+        /* ==========================================================================
+           BUILT-IN RHYTHM DASH CANVAS ENGINE
+           ========================================================================== */
+        function runDashEngine(canvas, ctx) {
+            let attempt = 1;
+            let score = 0;
+            let gameOver = false;
+            let gameWin = false;
+
+            const gravity = 0.65;
+            const jumpForce = -11.5;
+            const floorY = 360;
+
+            // Player Cube State
+            const player = {
+                x: 120,
+                y: floorY - 35,
+                size: 35,
+                vy: 0,
+                rotation: 0,
+                isGrounded: true
+            };
+
+            // Obstacles Array
+            let obstacles = [];
+            let spawnTimer = 0;
+            let particles = [];
+
+            // Audio Beat Pulse Mock
+            let beatPulse = 0;
+
+            function resetGame() {
+                player.y = floorY - player.size;
+                player.vy = 0;
+                player.rotation = 0;
+                player.isGrounded = true;
+                obstacles = [];
+                spawnTimer = 0;
+                score = 0;
+                gameOver = false;
+            }
+
+            function jump() {
+                if (player.isGrounded && !gameOver) {
+                    player.vy = jumpForce;
+                    player.isGrounded = false;
+                    createJumpParticles();
+                } else if (gameOver) {
+                    attempt++;
+                    resetGame();
+                }
+            }
+
+            // Controls Handlers
+            const handleKeyDown = (e) => {
+                if (e.code === 'Space' || e.code === 'ArrowUp') {
+                    e.preventDefault();
+                    jump();
+                }
+            };
+            const handlePointerDown = (e) => {
+                jump();
+            };
+
+            window.addEventListener('keydown', handleKeyDown);
+            canvas.addEventListener('pointerdown', handlePointerDown);
+
+            function createJumpParticles() {
+                for (let i = 0; i < 8; i++) {
+                    particles.push({
+                        x: player.x + player.size / 2,
+                        y: player.y + player.size,
+                        vx: (Math.random() - 0.5) * 4,
+                        vy: Math.random() * -2,
+                        size: Math.random() * 4 + 2,
+                        life: 1,
+                        color: '#00f0ff'
+                    });
+                }
+            }
+
+            function spawnObstacle() {
+                const types = ['spike', 'block', 'double_spike'];
+                const type = types[Math.floor(Math.random() * types.length)];
+
+                if (type === 'spike') {
+                    obstacles.push({ type: 'spike', x: canvas.width + 50, y: floorY, width: 30, height: 35 });
+                } else if (type === 'double_spike') {
+                    obstacles.push({ type: 'spike', x: canvas.width + 50, y: floorY, width: 60, height: 35 });
+                } else if (type === 'block') {
+                    obstacles.push({ type: 'block', x: canvas.width + 50, y: floorY - 35, width: 35, height: 35 });
+                }
+            }
+
+            function update() {
+                if (gameOver) return;
+
+                // Beat Pulse
+                beatPulse += 0.05;
+
+                // Physics Update
+                player.vy += gravity;
+                player.y += player.vy;
+
+                // Floor Collision
+                if (player.y >= floorY - player.size) {
+                    player.y = floorY - player.size;
+                    player.vy = 0;
+                    player.isGrounded = true;
+                    player.rotation = Math.round(player.rotation / 90) * 90; // Snap rotation
+                } else {
+                    player.rotation += 8; // Rotate in mid-air
+                }
+
+                // Obstacle Spawning
+                spawnTimer++;
+                if (spawnTimer > 85) {
+                    spawnObstacle();
+                    spawnTimer = 0;
+                }
+
+                // Move Obstacles
+                const speed = 6.5;
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    let obs = obstacles[i];
+                    obs.x -= speed;
+
+                    // Collision Detection (AABB)
+                    if (
+                        player.x < obs.x + obs.width &&
+                        player.x + player.size > obs.x &&
+                        player.y < obs.y &&
+                        player.y + player.size > obs.y - obs.height
+                    ) {
+                        gameOver = true;
+                        createDeathParticles();
+                    }
+
+                    // Remove off-screen obstacles
+                    if (obs.x + obs.width < 0) {
+                        obstacles.splice(i, 1);
+                        score += 10;
+                    }
+                }
+
+                // Update particles
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life -= 0.04;
+                    if (p.life <= 0) particles.splice(i, 1);
+                }
+            }
+
+            function createDeathParticles() {
+                for (let i = 0; i < 25; i++) {
+                    particles.push({
+                        x: player.x + player.size / 2,
+                        y: player.y + player.size / 2,
+                        vx: (Math.random() - 0.5) * 10,
+                        vy: (Math.random() - 0.5) * 10,
+                        size: Math.random() * 6 + 3,
+                        life: 1,
+                        color: '#ec4899'
+                    });
+                }
+            }
+
+            function draw() {
+                // Clear Canvas
+                ctx.fillStyle = '#090d16';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Animated Neon Grid Floor
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineWidth = 1;
+                for (let x = 0; x < canvas.width; x += 40) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, floorY);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+
+                // Floor Line
+                ctx.strokeStyle = '#00f0ff';
+                ctx.lineWidth = 3;
+                ctx.shadowColor = '#00f0ff';
+                ctx.shadowBlur = Math.sin(beatPulse) * 8 + 10;
+                ctx.beginPath();
+                ctx.moveTo(0, floorY);
+                ctx.lineTo(canvas.width, floorY);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Render Obstacles
+                obstacles.forEach(obs => {
+                    ctx.fillStyle = '#a855f7';
+                    ctx.shadowColor = '#a855f7';
+                    ctx.shadowBlur = 10;
+
+                    if (obs.type === 'spike') {
+                        // Draw Spikes
+                        const numSpikes = obs.width / 30;
+                        for (let s = 0; s < numSpikes; s++) {
+                            const sx = obs.x + s * 30;
+                            ctx.beginPath();
+                            ctx.moveTo(sx, floorY);
+                            ctx.lineTo(sx + 15, floorY - obs.height);
+                            ctx.lineTo(sx + 30, floorY);
+                            ctx.closePath();
+                            ctx.fill();
+                        }
+                    } else {
+                        // Draw Block
+                        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                    }
+                    ctx.shadowBlur = 0;
+                });
+
+                // Render Particles
+                particles.forEach(p => {
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.life;
+                    ctx.fillRect(p.x, p.y, p.size, p.size);
+                    ctx.globalAlpha = 1;
+                });
+
+                // Render Player Cube
+                if (!gameOver) {
+                    ctx.save();
+                    ctx.translate(player.x + player.size / 2, player.y + player.size / 2);
+                    ctx.rotate((player.rotation * Math.PI) / 180);
+                    
+                    // Cube Glow
+                    ctx.fillStyle = '#00f0ff';
+                    ctx.shadowColor = '#00f0ff';
+                    ctx.shadowBlur = 12;
+                    ctx.fillRect(-player.size / 2, -player.size / 2, player.size, player.size);
+                    
+                    // Inner Face Eyes
+                    ctx.fillStyle = '#090d16';
+                    ctx.shadowBlur = 0;
+                    ctx.fillRect(-8, -8, 6, 6);
+                    ctx.fillRect(2, -8, 6, 6);
+                    ctx.fillRect(-6, 4, 12, 3);
+                    
+                    ctx.restore();
+                }
+
+                // Render HUD Overlay
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '700 14px Outfit';
+                ctx.fillText(`ATTEMPT ${attempt}`, 20, 35);
+                ctx.fillText(`SCORE: ${score}`, 20, 58);
+
+                // Game Over Overlay
+                if (gameOver) {
+                    ctx.fillStyle = 'rgba(10, 13, 20, 0.75)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.fillStyle = '#ec4899';
+                    ctx.font = '800 28px Outfit';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('CRASHED!', canvas.width / 2, canvas.height / 2 - 10);
+
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.font = '500 14px Outfit';
+                    ctx.fillText('PRESS SPACE OR CLICK TO TRY AGAIN', canvas.width / 2, canvas.height / 2 + 25);
+                    ctx.textAlign = 'left';
+                }
+            }
+
+            function loop() {
+                update();
+                draw();
+                currentGameLoopId = requestAnimationFrame(loop);
+            }
+
+            loop();
+        }
+
+        /* ==========================================================================
+           RETRO SPACE DEFENDER CANVAS ENGINE
+           ========================================================================== */
+        function runSpaceEngine(canvas, ctx) {
+            let ship = { x: canvas.width / 2, y: canvas.height - 50, size: 20 };
+            let bullets = [];
+            let enemies = [];
+            let score = 0;
+
+            const handleMove = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                ship.x = (e.clientX || e.touches[0].clientX) - rect.left;
+            };
+
+            const handleShoot = () => {
+                bullets.push({ x: ship.x, y: ship.y, vy: -8 });
+            };
+
+            canvas.addEventListener('pointermove', handleMove);
+            canvas.addEventListener('pointerdown', handleShoot);
+
+            function loop() {
+                ctx.fillStyle = '#0a0d14';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Spawn Enemies
+                if (Math.random() < 0.03) {
+                    enemies.push({ x: Math.random() * (canvas.width - 20) + 10, y: -20, vy: 2 });
+                }
+
+                // Bullets
+                ctx.fillStyle = '#00f0ff';
+                for (let i = bullets.length - 1; i >= 0; i--) {
+                    let b = bullets[i];
+                    b.y += b.vy;
+                    ctx.fillRect(b.x - 2, b.y, 4, 10);
+                    if (b.y < 0) bullets.splice(i, 1);
+                }
+
+                // Enemies
+                ctx.fillStyle = '#ec4899';
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                    let en = enemies[i];
+                    en.y += en.vy;
+                    ctx.beginPath();
+                    ctx.arc(en.x, en.y, 12, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Bullet Collision
+                    for (let j = bullets.length - 1; j >= 0; j--) {
+                        let b = bullets[j];
+                        if (Math.hypot(en.x - b.x, en.y - b.y) < 14) {
+                            enemies.splice(i, 1);
+                            bullets.splice(j, 1);
+                            score += 50;
+                            break;
+                        }
+                    }
+                }
+
+                // Player Ship
+                ctx.fillStyle = '#a855f7';
+                ctx.beginPath();
+                ctx.moveTo(ship.x, ship.y - 15);
+                ctx.lineTo(ship.x - 15, ship.y + 15);
+                ctx.lineTo(ship.x + 15, ship.y + 15);
+                ctx.closePath();
+                ctx.fill();
+
+                // Score
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '700 14px Outfit';
+                ctx.fillText(`SCORE: ${score}`, 20, 30);
+
+                currentGameLoopId = requestAnimationFrame(loop);
+            }
+            loop();
+        }
+
+        /* ==========================================================================
+           CYBER SNAKE CANVAS ENGINE
+           ========================================================================== */
+        function runSnakeEngine(canvas, ctx) {
+            const gridSize = 20;
+            let snake = [{ x: 10, y: 10 }];
+            let food = { x: 15, y: 15 };
+            let dir = { x: 1, y: 0 };
+            let score = 0;
+            let moveCounter = 0;
+
+            const handleKeys = (e) => {
+                if (e.key === 'ArrowUp' && dir.y === 0) dir = { x: 0, y: -1 };
+                if (e.key === 'ArrowDown' && dir.y === 0) dir = { x: 0, y: 1 };
+                if (e.key === 'ArrowLeft' && dir.x === 0) dir = { x: -1, y: 0 };
+                if (e.key === 'ArrowRight' && dir.x === 0) dir = { x: 1, y: 0 };
+            };
+            window.addEventListener('keydown', handleKeys);
+
+            function loop() {
+                moveCounter++;
+                if (moveCounter % 6 === 0) {
+                    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+                    snake.unshift(head);
+
+                    if (head.x === food.x && head.y === food.y) {
+                        score += 100;
+                        food = {
+                            x: Math.floor(Math.random() * (canvas.width / gridSize)),
+                            y: Math.floor(Math.random() * (canvas.height / gridSize))
+                        };
+                    } else {
+                        snake.pop();
+                    }
+                }
+
+                ctx.fillStyle = '#0a0d14';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Food
+                ctx.fillStyle = '#00f0ff';
+                ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+
+                // Snake Body
+                ctx.fillStyle = '#a855f7';
+                snake.forEach(seg => {
+                    ctx.fillRect(seg.x * gridSize, seg.y * gridSize, gridSize - 2, gridSize - 2);
+                });
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '700 14px Outfit';
+                ctx.fillText(`SCORE: ${score}`, 20, 30);
+
+                currentGameLoopId = requestAnimationFrame(loop);
+            }
+            loop();
+        }
+    </script>
+</body>
+</html>
